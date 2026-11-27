@@ -1,9 +1,13 @@
 # Mage Class
+import random
+
+import numpy as np
 
 # Enumerate the current available actions
 action_list = [
     "Frost Bolt",
-    "Fireball"
+    "Fireball",
+    "Pyroblast"
 ]
 
 # This is the state list that the Mage class will care about and use to build the Q-table in main
@@ -13,7 +17,8 @@ action_list = [
 
 state_list = [
     "HP %",
-    "Fire Ball DoT Remaining Time"
+    "Fire Ball DoT Remaining Time",
+    "Pyroblast Remaining Dot Time"
 ]
 
 class Mage:
@@ -34,9 +39,13 @@ class Mage:
         self.fireball_dot_size = int(8/0.1 + 1)
         self.tar_fireball_time = 0
 
+        # Dot based on 12 second cooldown 3 second proc
+        self.pyroblast_dot_size = int(12/0.1 + 1)
+        self.tar_pyroblast_time = 0
 
-        self.curState = (self.tar_cur_hp, self.tar_fireball_time)
-        self.q_array_size = (self.hp_size, self.fireball_dot_size, self.action_count)
+
+        self.curState = (self.tar_cur_hp, self.tar_fireball_time, self.tar_pyroblast_time)
+        self.q_array_size = (self.hp_size, self.fireball_dot_size,self.pyroblast_dot_size, self.action_count)
 
 
     # The goal is that each action will have some values that need to be calculated and utilized at a given moment
@@ -51,31 +60,38 @@ class Mage:
             self.take_action(0)
         if action == 1:
             self.take_action(1)
+        if action == 2:
+            self.take_action(2)
 
-        print("Health Remaining: " + str(self.tar_cur_hp))
+        #print("Health Remaining: " + str(self.tar_cur_hp))
 
 
     def take_action(self, action):
         # Frost Bolt
         if action == 0:
             self.time_skip(3)
-            self.tar_cur_hp -= 470
-            print("FROST BOLT: " + str(self.tar_cur_hp))
+            self.tar_cur_hp -= np.random.randint(470,505)
+            #print("FROST BOLT: " + str(self.tar_cur_hp))
 
         # Fireball
         if action == 1:
             # Cast time
             self.time_skip(3.5)
-            self.tar_cur_hp -= 437
+            self.tar_cur_hp -= np.random.randint(437,553)
             self.tar_fireball_time = 8
-            print("FIREBALL: " + str(self.tar_cur_hp))
+            #print("FIREBALL: " + str(self.tar_cur_hp))
+
+        if action == 2:
+            self.time_skip(6.0)
+            self.tar_cur_hp -= np.random.randint(547,674)
+            self.tar_pyroblast_time = 12
 
     def get_state(self):
         # This is returning an array of the positions for each state dimension
         if self.tar_cur_hp <= 0:
             self.tar_cur_hp = 0
 
-        self.curState = (int(self.tar_cur_hp / self.tar_total_hp * 100), int(self.tar_fireball_time / 0.1))
+        self.curState = (int(self.tar_cur_hp / self.tar_total_hp * 100), int(self.tar_fireball_time / 0.1), int(self.tar_pyroblast_time / 0.1))
 
         return self.curState
 
@@ -88,20 +104,28 @@ class Mage:
             if self.tar_fireball_time > 0:
                 self.tar_fireball_time -= 0.1
                 if self.tar_fireball_time in [6,4,2,0]:
-                    self.tar_fireball_time -= 15 # This needs to be changeable later
+                    self.tar_cur_hp -= 15 # This needs to be changeable later
+
+            if self.tar_pyroblast_time > 0:
+                self.tar_pyroblast_time -= 0.1
+                if self.tar_pyroblast_time in [9,6,3,0]:
+                    self.tar_cur_hp -= 53
             time_to_pass -= 0.1
 
         self.time += time
 
     def calculate_reward(self):
         if self.tar_cur_hp <= 0:
-            reward = 100000
+            # DPS
+            reward = self.tar_cur_hp/self.time
         else:
             # Else we want the model to focus first on lower HP, an second on overall time (actions) taken
-            reward = self.time* -0.1 + (self.tar_cur_hp / self.tar_total_hp) * -0.2
+            #reward = self.time* -0.1 + ((self.tar_cur_hp / self.tar_total_hp)*100) * -0.2
+            reward = -0.1
 
         return reward
 
     def reset(self):
         self.tar_cur_hp = self.tar_total_hp
         self.tar_fireball_time = 0
+        self.time = 0

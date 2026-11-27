@@ -17,7 +17,7 @@ from Character import Character
 # I am expecting that the system will take this and go with always the slow attack for higher dps without extra conditions
 
 class SimulationData:
-    def __init__(self, episodes, learn_rate, discount_factor,explore_prob,n_act, action_list= False, hp = 10000):
+    def __init__(self, episodes, learn_rate, discount_factor,explore_prob, hp = 10000):
         self.hp = hp
         self.episodes = episodes
         self.learn_rate = learn_rate
@@ -44,12 +44,21 @@ class SimulationData:
         return self.character.char_loadout.calculate_reward()
 
     def update_q_table(self, state, action, next_state, reward):
-        self.Q_table[state, action] += self.learn_rate * (
-                reward + self.discount_factor * np.max(self.Q_table[next_state]) - self.Q_table[state, action]
+        pos = state +(action,)
+        self.Q_table[pos] += self.learn_rate * (
+                reward + self.discount_factor * np.max(self.Q_table[next_state]) - self.Q_table[pos]
         )
 
     def display_results(self):
-        print(self.Q_table)
+        print("Done")
+        #print(self.Q_table)
+        # Plot cast time versus action at full hp
+        #x = np.linspace(0.0, 8.0, 81)
+        #plt.plot(x,self.Q_table[0,:,1])
+
+        # print with respect to health and action
+        #print(self.Q_table[:,0,:])
+        #plt. plot(self.Q_table[:,80,1])
         # q_values_grid = self.Q_table.reshape((self.n_state, self.n_act))
         #
         # plt.figure(figsize=(6, 6))
@@ -73,7 +82,7 @@ class SimulationData:
         # # for i in range(self.n_state):
         # #     for j in range(self.n_act):
         # #         plt.text(j, i, f'{q_values_grid[i, j]:.2f}', ha='center', va='center', color='black')
-        # plt.show()
+        #plt.show()
         #print("Learned Q-table:")
         #print(sim.Q_table)
     def reset(self):
@@ -103,8 +112,8 @@ class SimulationData:
 
                 # Update Q_Table
                 self.update_q_table(current_state, action, next_state, reward)
-                #print("Q_Value: " + str(self.Q_table[current_state]))
-                #time.sleep(.5)
+                print(f"State: {current_state}   Action: {action}   Q_Value: {self.Q_table[current_state]}    Time Passed: {self.character.char_loadout.time}")
+                #time.sleep(.1)
                 #print(Q_table)
                 if self.character.char_loadout.tar_cur_hp <= 0:
                     break
@@ -126,9 +135,8 @@ if __name__ == '__main__':
     lRate = 0.8
     discFact = 0.95
     expProb = 0.1
-    n_actions = 2
 
-    sim = SimulationData(epochs,lRate, discFact, expProb,n_actions)
+    sim = SimulationData(epochs,lRate, discFact, expProb)
     sim.run_simulation()
 
     sim.display_results()
