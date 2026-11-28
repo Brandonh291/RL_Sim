@@ -23,6 +23,10 @@ state_list = [
     "Pyroblast Remaining Dot Time"
 ]
 
+talent_list = [
+
+]
+
 mana_cost = [
     290,
     410,
