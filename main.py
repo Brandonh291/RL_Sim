@@ -6,6 +6,7 @@ from random import randint
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 from Character import Character
 
 
@@ -25,16 +26,20 @@ class SimulationData:
         self.explore_prob = explore_prob
 
         self.character = Character("MAGE",hp)
+        self.action_table = np.zeros(self.character.char_loadout.state_size)
         self.Q_table = np.zeros(self.character.char_loadout.q_array_size)
 
     def get_state(self):
         return self.character.char_loadout.get_state()
 
     def choose_action(self):
-        if np.random.rand() < self.explore_prob:
-            action = np.random.randint(0, self.character.char_loadout.action_count)
-        else:
-            action = np.argmax(self.Q_table[self.character.char_loadout.curState])
+        action = self.character.char_loadout.get_action(self.Q_table, self.explore_prob)
+        # if np.random.rand() < self.explore_prob:
+        #     action = np.random.randint(0, self.character.char_loadout.action_count)
+        # else:
+        #     action = np.argmax(self.Q_table[self.character.char_loadout.curState])
+        self.action_table[self.character.char_loadout.curState] = np.argmax(self.Q_table[self.character.char_loadout.curState])
+        #print(f"State: {self.character.char_loadout.curState}  --- Best Action: {action}")
         return action
 
     def take_action(self,act):
@@ -52,39 +57,7 @@ class SimulationData:
     def display_results(self):
         print("Done")
         #print(self.Q_table)
-        # Plot cast time versus action at full hp
-        #x = np.linspace(0.0, 8.0, 81)
-        #plt.plot(x,self.Q_table[0,:,1])
 
-        # print with respect to health and action
-        #print(self.Q_table[:,0,:])
-        #plt. plot(self.Q_table[:,80,1])
-        # q_values_grid = self.Q_table.reshape((self.n_state, self.n_act))
-        #
-        # plt.figure(figsize=(6, 6))
-        # plt.imshow(q_values_grid, cmap='coolwarm', interpolation='nearest')
-        # plt.colorbar(label='Q-value')
-        # plt.title('Learned Q-values for Each State')
-        #
-        # # Build Y Tick Plot based on Steps
-        # y_label = []
-        #
-        # for health in range(0,self.hp+1,1):
-        #     if health > 0:
-        #         y_label.append(f"{health} - {health-1}")
-        #     else:
-        #         y_label.append("0")
-        # plt.yticks(np.arange(self.n_state),y_label)
-        # plt.xticks(np.arange(self.n_act), ['Fast', 'Heavy'])
-        # plt.gca().invert_yaxis()
-        # plt.grid(True)
-        #
-        # # for i in range(self.n_state):
-        # #     for j in range(self.n_act):
-        # #         plt.text(j, i, f'{q_values_grid[i, j]:.2f}', ha='center', va='center', color='black')
-        #plt.show()
-        #print("Learned Q-table:")
-        #print(sim.Q_table)
     def reset(self):
         self.character.char_loadout.reset()
 
@@ -112,10 +85,10 @@ class SimulationData:
 
                 # Update Q_Table
                 self.update_q_table(current_state, action, next_state, reward)
-                print(f"State: {current_state}   Action: {action}   Q_Value: {self.Q_table[current_state]}    Time Passed: {self.character.char_loadout.time}")
+                print(f"State: {next_state}   Action Taken: {action}   Q_Value: {self.Q_table[next_state]}    Time Passed: {self.character.char_loadout.time}")
                 #time.sleep(.1)
                 #print(Q_table)
-                if self.character.char_loadout.tar_cur_hp <= 0:
+                if next_state[0] <= 0:
                     break
 
                 current_state = next_state
